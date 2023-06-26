@@ -2,9 +2,10 @@
 import { ref } from "vue";
 import axios from "axios";
 import { useRouter } from "vue-router";
+import CityList from "../components/CityList.vue";
+import CityCardSkeleton from "../components/CityCardSkeleton.vue";
 
-const { MAPBOXAPIKEY} = import.meta.env
-
+const { VITE_MAPBOXAPIKEY } = import.meta.env
 
 const searchQuery = ref("");
 const queryTimeout = ref(null);
@@ -17,7 +18,7 @@ const getSearchResults = () => {
     if (searchQuery.value !== "") {
       try {
         const result = await axios.get(
-          `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchQuery.value}.json?access_token=${MAPBOXAPIKEY}&types=place`
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${searchQuery.value}.json?access_token=${VITE_MAPBOXAPIKEY}&types=place`
         );
 
         mapboxSearchResults.value = result.data.features;
@@ -34,7 +35,6 @@ const getSearchResults = () => {
 const router = useRouter()
 const previewCity = (searchResult) => {
   const [city, state] = searchResult.place_name.split(",")
-  console.log(searchResult.geometry)
   router.push({
     name: "cityView",
     params: { state: state.replaceAll(" ", ""), city: city },
@@ -60,12 +60,20 @@ const previewCity = (searchResult) => {
         <p v-if="!searchError && mapboxSearchResults.length === 0">No results match your query, try a different term.</p>
 
         <template v-else>
-          <li v-for="searchResult in mapboxSearchResults" :key="searchResult.id" class="py-2 cursor-pointer"
-            @click="previewCity(searchResult)">
+          <li v-for="searchResult in mapboxSearchResults" :key="searchResult.id"
+            class="py-2 cursor-pointer hover:bg-weather-primary " @click="previewCity(searchResult)">
             {{ searchResult.place_name }}
           </li>
         </template>
       </ul>
+    </div>
+    <div class="flex flex-col gap-4">
+      <Suspense>
+        <CityList />
+        <template #fallback>
+          <CityCardSkeleton/>
+        </template>
+      </Suspense>
     </div>
   </main>
 </template>
